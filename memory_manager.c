@@ -7,16 +7,21 @@
 
 static STRU_MEM_LIST* mem_pool = NULL;
 
+/*
+ * Print out the current status of the memory manager.
+ * Reading this function may help you understand how the memory manager organizes the memory.
+ * Do not change the implementation of this function. It will be used to help the grading.
+ */
 void mem_mngr_print_snapshot(void)
 {
-    STRU_MEM_LIST* mem_list = NULL;
+    STRU_MEM_LIST * mem_list = NULL;
 
     printf("============== Memory snapshot ===============\n");
 
     mem_list = mem_pool; // Get the first memory list
     while(NULL != mem_list)
     {
-        STRU_MEM_BATCH* mem_batch = mem_list->first_batch; // Get the first mem batch from the list 
+        STRU_MEM_BATCH * mem_batch = mem_list->first_batch; // Get the first mem batch from the list 
 
         printf("mem_list %p slot_size %d batch_count %d free_slot_bitmap %p\n", 
                    mem_list, mem_list->slot_size, mem_list->batch_count, mem_list->free_slots_bitmap);
@@ -82,11 +87,18 @@ static STRU_MEM_LIST* create_memory_list(int slot_size) {
     return new_list;
 }
 
+/*
+ * Initialize the memory manager with 16 bytes(defined by the macro MEM_ALIGNMENT_BOUNDARY) slot size mem_list.
+ * Initialize this list with 1 batch of slots.
+ */
 void mem_mngr_init(void) {
     // Initialize with default 16-byte aligned memory list
     mem_pool = create_memory_list(MEM_ALIGNMENT_BOUNDARY);
 }
 
+/*
+ * Clean up the memory manager (e.g., release all the memory allocated)
+ */
 void mem_mngr_leave(void) {
     STRU_MEM_LIST* curr_list = mem_pool;
     
@@ -155,7 +167,11 @@ static STRU_MEM_LIST* find_or_create_list(size_t size) {
     return new_list;
 }
 
-
+/*
+ * Allocate a chunk of memory 	
+ * @param size: size in bytes to be allocated
+ * @return: the pointer to the allocated memory slot
+ */
 void* mem_mngr_alloc(size_t size) {
     if (size == 0 || size > 5 * MEM_ALIGNMENT_BOUNDARY) {
         return NULL;
@@ -202,6 +218,11 @@ void* mem_mngr_alloc(size_t size) {
     return (char*)target_batch->batch_mem + (slot_in_batch * list->slot_size);
 }
 
+/*
+ * Free a chunk of memory pointed by ptr
+ * Print out any error messages
+ * @param: the pointer to the allocated memory slot
+ */
 void mem_mngr_free(void* ptr) {
     if (!ptr) return;
 
