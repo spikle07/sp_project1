@@ -49,13 +49,12 @@ static STRU_MEM_BATCH* create_memory_batch(int slot_size) {
     batch->next_batch = NULL;
     return batch;
 }
-
 // helper to create a new memory list
 static STRU_MEM_LIST* create_memory_list(int slot_size) {
     STRU_MEM_LIST* new_list = (STRU_MEM_LIST*)malloc(sizeof(STRU_MEM_LIST));
     if (!new_list) return NULL;
 
-    // calculate initial bitmap size 
+    // Calculate initial bitmap size 
     int bitmap_size = (MEM_BATCH_SLOT_COUNT + BIT_PER_BYTE - 1) / BIT_PER_BYTE;
     new_list->free_slots_bitmap = (unsigned char*)malloc(bitmap_size);
     if (!new_list->free_slots_bitmap) {
@@ -63,7 +62,10 @@ static STRU_MEM_LIST* create_memory_list(int slot_size) {
         return NULL;
     }
 
-    memset(new_list->free_slots_bitmap, 0xFF, bitmap_size); // init bitmap
+    // init bitmap using for loop
+    for (int i = 0; i < bitmap_size; i++) {
+        new_list->free_slots_bitmap[i] = 0xFF;
+    }
 
     new_list->slot_size = slot_size;
     new_list->batch_count = 1;
@@ -125,35 +127,34 @@ static void expand_bitmap(STRU_MEM_LIST* list) {
 }
 
 static STRU_MEM_LIST* find_or_create_list(size_t size) {
-    int aligned_size = SLOT_ALLINED_SIZE(size);
-    STRU_MEM_LIST* curr = mem_pool;
-    STRU_MEM_LIST* prev = NULL;
+    int target_size = SLOT_ALLINED_SIZE(size);  // align size
+    STRU_MEM_LIST* current = mem_pool;
+    STRU_MEM_LIST* previous = NULL;
     
-    // Find appropriate list
-    while (curr && curr->slot_size < aligned_size) {
-        prev = curr;
-        curr = curr->next_list;
+    // find a matching or larger slot size
+    while (current != NULL) {
+        if (current->slot_size == target_size) return current;  // match found
+        if (current->slot_size > target_size) break;  // stop at larger size
+        previous = current;
+        current = current->next_list;
     }
     
-    if (curr && curr->slot_size == aligned_size) {
-        return curr;
-    }
+    // create a new memory list if no match 
+    STRU_MEM_LIST* new_list = create_memory_list(target_size);
+    if (!new_list) return NULL;  // Return NULL if allocation fails
     
-    // Create new list if needed
-    STRU_MEM_LIST* new_list = create_memory_list(aligned_size);
-    if (!new_list) return NULL;
-    
-    // Insert in sorted order
-    if (!prev) {
-        new_list->next_list = mem_pool;
+    // insert new list in sorted order
+    if (!previous) {
+        new_list->next_list = mem_pool;  // insert at head
         mem_pool = new_list;
     } else {
-        new_list->next_list = prev->next_list;
-        prev->next_list = new_list;
+        new_list->next_list = current;  // insert between nodes
+        previous->next_list = new_list;
     }
     
     return new_list;
 }
+
 
 void* mem_mngr_alloc(size_t size) {
     if (size == 0 || size > 5 * MEM_ALIGNMENT_BOUNDARY) {
