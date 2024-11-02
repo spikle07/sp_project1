@@ -34,28 +34,28 @@ void mem_mngr_print_snapshot(void)
     printf("==============================================\n");
 }
 
-// Helper function to create a new memory batch
+// helper to create a new memory batch
 static STRU_MEM_BATCH* create_memory_batch(int slot_size) {
-    STRU_MEM_BATCH* new_batch = (STRU_MEM_BATCH*)malloc(sizeof(STRU_MEM_BATCH));
-    if (!new_batch) return NULL;
+    STRU_MEM_BATCH* batch = (STRU_MEM_BATCH*)malloc(sizeof(STRU_MEM_BATCH));
+    if (!batch) return NULL;
 
-    // Allocate memory for the batch slots
-    new_batch->batch_mem = malloc(slot_size * MEM_BATCH_SLOT_COUNT);
-    if (!new_batch->batch_mem) {
-        free(new_batch);
+    // allocate memory for batch slots
+    batch->batch_mem = malloc(slot_size * MEM_BATCH_SLOT_COUNT);
+    if (!batch->batch_mem) {
+        free(batch);
         return NULL;
     }
 
-    new_batch->next_batch = NULL;
-    return new_batch;
+    batch->next_batch = NULL;
+    return batch;
 }
 
-// Helper function to create a new memory list
+// helper to create a new memory list
 static STRU_MEM_LIST* create_memory_list(int slot_size) {
     STRU_MEM_LIST* new_list = (STRU_MEM_LIST*)malloc(sizeof(STRU_MEM_LIST));
     if (!new_list) return NULL;
 
-    // Calculate initial bitmap size (1 byte can track 8 slots)
+    // calculate initial bitmap size 
     int bitmap_size = (MEM_BATCH_SLOT_COUNT + BIT_PER_BYTE - 1) / BIT_PER_BYTE;
     new_list->free_slots_bitmap = (unsigned char*)malloc(bitmap_size);
     if (!new_list->free_slots_bitmap) {
@@ -63,15 +63,13 @@ static STRU_MEM_LIST* create_memory_list(int slot_size) {
         return NULL;
     }
 
-    // Initialize bitmap (1 means slot is free)
-    memset(new_list->free_slots_bitmap, 0xFF, bitmap_size);
+    memset(new_list->free_slots_bitmap, 0xFF, bitmap_size); // init bitmap
 
     new_list->slot_size = slot_size;
     new_list->batch_count = 1;
     new_list->bitmap_size = bitmap_size;
     new_list->next_list = NULL;
 
-    // Create first batch
     new_list->first_batch = create_memory_batch(slot_size);
     if (!new_list->first_batch) {
         free(new_list->free_slots_bitmap);
