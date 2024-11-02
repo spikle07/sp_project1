@@ -67,7 +67,7 @@ static STRU_MEM_LIST* create_memory_list(int slot_size) {
         return NULL;
     }
 
-    // init bitmap using for loop
+    // init bitmap  
     for (int i = 0; i < bitmap_size; i++) {
         new_list->free_slots_bitmap[i] = 0xFF;
     }
@@ -106,7 +106,7 @@ void mem_mngr_leave(void) {
         STRU_MEM_LIST* next_list = curr_list->next_list;
         STRU_MEM_BATCH* curr_batch = curr_list->first_batch;
         
-        // Free all batches in this list
+        // free all batches in this list
         while (curr_batch) {
             STRU_MEM_BATCH* next_batch = curr_batch->next_batch;
             free(curr_batch->batch_mem);
@@ -114,7 +114,6 @@ void mem_mngr_leave(void) {
             curr_batch = next_batch;
         }
         
-        // Free the bitmap and list structure
         free(curr_list->free_slots_bitmap);
         free(curr_list);
         curr_list = next_list;
@@ -127,7 +126,6 @@ static void expand_bitmap(STRU_MEM_LIST* list) {
     int new_bitmap_size = list->bitmap_size + (MEM_BATCH_SLOT_COUNT + BIT_PER_BYTE - 1) / BIT_PER_BYTE;
     unsigned char* new_bitmap = (unsigned char*)malloc(new_bitmap_size);
     
-    // Copy old bitmap content
     memcpy(new_bitmap, list->free_slots_bitmap, list->bitmap_size);
     
     // Initialize new portion
